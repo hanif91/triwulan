@@ -8,12 +8,10 @@ import { TitleProvider } from '@/providers/title-page-provider'
 import { usePathname,useSearchParams } from 'next/navigation'
 import { useState,useEffect } from "react"
 import  SideMenuData  from '@/data/side-menuData';
+import { signOut } from 'next-auth/react'
 import {
   Sheet,
-  SheetClose,
   SheetContent,
-  SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -22,6 +20,15 @@ import Logo from '../logo'
 import ItemSubmenu from '@/components/sidebar/item-submenu'
 import ItemMenu from '@/components/sidebar/item-menu'
 import { iconsMenus } from '@/data/icons-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 
 
 
@@ -122,10 +129,19 @@ export default function Header() {
             <div className='mx-1'>
               <ModeToggle/>
             </div>
-          
-            <Button variant="outline" className="border-0 mx-1" size="icon">
-              <UserCircle2 size={26} />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="border-0 mx-1" size="icon">
+                  <UserCircle2 size={26} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <Button className="border-0 mx-1 w-full" size="icon" onClick={()=> signOut({ redirect : true , callbackUrl : "/login"}) }>
+                    Log Out
+                  </Button>              
+              </DropdownMenuContent>
+            </DropdownMenu>
+  
           </div>
 
         </div>

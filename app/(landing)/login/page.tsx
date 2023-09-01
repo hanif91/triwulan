@@ -1,8 +1,7 @@
 'use client'
 import { ModeToggle } from '@/components/header/toggle-theme'
 import Logo from '@/components/logo'
-import React from 'react'
-import { signIn } from 'next-auth/react'
+import { signIn, useSession } from 'next-auth/react'
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -19,6 +18,10 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Label } from '@/components/ui/label'
+import { redirect } from 'next/navigation'
+import { useEffect } from 'react'
+
+
 
 const FormSchema = z.object({
   username: z.string()
@@ -31,15 +34,23 @@ const FormSchema = z.object({
 
 function Login() {
 
-
+  const {data : session, status} = useSession( )
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
   })
 
+
+  if (status === "authenticated") {
+    redirect('/')
+  } else if (status === "loading"){
+    return null
+  }
+
+
   async function onSubmit(values: z.infer<typeof FormSchema>) {
-    console.log(values)
-    const res = await signIn('credentials', {...values, redirect : false})
-    console.log(res)
+    
+    const res = await signIn('credentials', {...values, redirect : false })
+    
   }
   return (
     <div className='container  min-w-[350px] flex h-screen bg-primary-foreground'>

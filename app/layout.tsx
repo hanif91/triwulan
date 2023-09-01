@@ -1,7 +1,10 @@
+
 import './globals.css'
 import type { Metadata } from 'next'
 import { Roboto } from 'next/font/google'
 import { ThemeProvider } from '@/providers/theme-provider'
+import { MySession } from '@/providers/mysession'
+
 
 // const inter = Inter({ subsets: ['latin'] })
 const roboto = Roboto({
@@ -17,16 +20,20 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  session
 }: {
-  children: React.ReactNode
+  children: React.ReactNode,
+  session : any
 }) {
   return (
     <html lang="en">
 
       <body className={` ${roboto.className}`}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        {children}
-      </ThemeProvider>
+       <MySession session={session}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+        </ThemeProvider>
+      </MySession>
       </body>
 
     </html>

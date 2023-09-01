@@ -5,11 +5,14 @@ import  Sidebar  from "@/components/sidebar/MySidebar"
 
 
 export default function RootLayout({
-  children,
+  children
 }: {
   children: React.ReactNode
 }) {
+
+
   return (
+
     <main className="container  min-w-[350px] flex h-screen bg-background">
      
         <div className="hidden md:flex flex-col w-1/5 h-full border-2 min-w-[75px]  max-w-[75px] lg:min-w-[200px] lg:max-w-[250px] shadow-sm shadow-card-foreground">
@@ -30,5 +33,6 @@ export default function RootLayout({
           </div>
         </div>
     </main>
+
   )
 }
