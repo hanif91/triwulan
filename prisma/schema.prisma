@@ -16,3 +16,10 @@ model userakses {
   pass     String? @db.VarChar(55)
   alamat   String? @db.VarChar(100)
 }
+
+model periodeposting {
+  periode String  @id @db.Char(6)
+  nama    String? @db.VarChar(35)
+  aktif   String? @default("1") @db.Char(1)
+  arsip   String? @default("0") @db.Char(1)
+}

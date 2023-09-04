@@ -15,7 +15,7 @@ export default function Main() {
   // }
 
   return (
-    <div>
+    <div className="w-full h-full overflow-auto ">
       Main Page
     </div>
   )
