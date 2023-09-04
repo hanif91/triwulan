@@ -5,6 +5,7 @@ import { Roboto } from 'next/font/google'
 import { ThemeProvider } from '@/providers/theme-provider'
 import { MySession } from '@/providers/mysession'
 
+import { Toaster } from "@/components/ui/toaster"
 
 // const inter = Inter({ subsets: ['latin'] })
 const roboto = Roboto({
@@ -33,6 +34,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
         </ThemeProvider>
+        <Toaster />
       </MySession>
       </body>
 

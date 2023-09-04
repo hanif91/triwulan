@@ -8,7 +8,7 @@ import { TitleProvider } from '@/providers/title-page-provider'
 import { usePathname,useSearchParams } from 'next/navigation'
 import { useState,useEffect } from "react"
 import  SideMenuData  from '@/data/side-menuData';
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import {
   Sheet,
   SheetContent,
@@ -33,7 +33,7 @@ import {
 
 
 export default function Header() {
-
+  const {data : session} = useSession( )
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const changeTitle = useActivePage().changeTitle
@@ -136,6 +136,18 @@ export default function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuLabel className='flex flex-row justify-between'>
+                  <span className='my-auto'>Profile </span> 
+                  {/* <Button className="w-10 h-7" size="icon"  >Cek</Button>  */}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    Name : {session?.user.name}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    Jabatan : {session?.user.role}  
+                  </DropdownMenuItem>
+                <DropdownMenuSeparator className='mb-3'/>
                 <Button className="border-0 mx-1 w-full" size="icon" onClick={()=> signOut({ redirect : true , callbackUrl : "/login"}) }>
                     Log Out
                   </Button>              

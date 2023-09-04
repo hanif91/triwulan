@@ -82,7 +82,10 @@ const authOptions : NextAuthOptions = {
       clientId : process.env.GOOGLE_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
-  ],
+  ],  pages: {
+    signIn: '/login',
+    signOut: '/',
+  },
   secret : process.env.NEXTAUTH_SECRET,
   callbacks  : {
     async jwt ( { token, user}) {
