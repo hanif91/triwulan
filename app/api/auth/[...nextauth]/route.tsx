@@ -10,7 +10,8 @@ interface MyUser  {
   id? : number,
   name? : string | null,
   jabatan? : string | null,
-  nik? : string | null
+  nik? : string | null,
+  username? : string | null
 }
 
 
@@ -46,7 +47,8 @@ const authOptions : NextAuthOptions = {
               id:true,
               nama : true,
               jabatan : true,
-              nik : true
+              nik : true,
+              username : true
             }
           });
           
@@ -58,7 +60,8 @@ const authOptions : NextAuthOptions = {
             id : user.id,
             name : user.nama,
             jabatan : user.jabatan,
-            nik : user.nik
+            nik : user.nik,
+            username : user.username
           }
           
           const usr : User = {
@@ -66,6 +69,7 @@ const authOptions : NextAuthOptions = {
             name : myUser.name, 
             email : "",
             image: "",
+            username : myUser.username || "",
             role : myUser.jabatan || ""
           }
           
@@ -91,7 +95,7 @@ const authOptions : NextAuthOptions = {
     async jwt ( { token, user}) {
       if (user) {
         // console.log({ ...token, id : user.id, role : user.role})
-        return { ...token, id : user.id, role : user.role} as any
+        return { ...token, id : user.id, username : user.username, role : user.role} as any
       }
 
       return token
@@ -103,6 +107,7 @@ const authOptions : NextAuthOptions = {
         user : {
           ...session.user,
           id : token.id,
+          username : token.username,
           role : token.role
         }
       }

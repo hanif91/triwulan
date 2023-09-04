@@ -7,10 +7,12 @@ declare module "next-auth" {
       id : number,
       role : string,
       name : string,
+      username : string,
     } & DefaultSession
   }
 
   interface User extends DefaultUser {
+    username : string,
     role : string,
   }
 }
