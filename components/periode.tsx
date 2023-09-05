@@ -1,46 +1,49 @@
 'use client'
-
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+  FormControl,
+} from "@/components/ui/form"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { PeriodeData } from "@/types/extra";
+import { useEffect, useState } from "react";
+import { useOrigin } from "@/hooks/origins";
 
-const frameworks = [
-  {
-    value: "next.js",
-    label: "Next.js",
-  },
-  {
-    value: "sveltekit",
-    label: "SvelteKit",
-  },
-  {
-    value: "nuxt.js",
-    label: "Nuxt.js",
-  },
-  {
-    value: "remix",
-    label: "Remix",
-  },
-  {
-    value: "astro",
-    label: "Astro",
-  },
-]
- 
+export default function Periode({onValueChange , defaultValue } : { onValueChange : any, defaultValue? : string}) {
+  const [periodeData, setPeriodeData] = useState<PeriodeData[]>([])
+  const origin = useOrigin();
+  console.log(origin);
+  useEffect(() => {
 
-export default function Periode() {
+    const fetchPeriode = async () => {
+      const res = await fetch(`${origin}/api/extra/periode`)
+      const periodeData = await res.json()
+      setPeriodeData(periodeData)
+    }
+    
+    
+    fetchPeriode();
+  }, [])
   return (
-    <div>
-      
-    </div>
+      <Select onValueChange={onValueChange} defaultValue={defaultValue}>
+          <FormControl>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a Periode" />
+            </SelectTrigger>
+          </FormControl>
+          <SelectContent >
+            <ScrollArea className="h-72 w-full rounded-md border">
+              {periodeData.map((periode) => (
+                <SelectItem value={periode.periode}>{periode.nama || ""}</SelectItem>
+              ))}
+            </ScrollArea>
+          </SelectContent>
+  
+        </Select>
   )
 }
