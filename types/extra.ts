@@ -3,3 +3,8 @@ export type PeriodeData = {
   nama : string | null
 }
  
+export type PeriodeTriwulan = {
+  nama : string,
+  valuetriwulan : string
+}
+ 

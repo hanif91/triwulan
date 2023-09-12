@@ -10,14 +10,14 @@ import {
   FormControl,
 } from "@/components/ui/form"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { PeriodeData } from "@/types/extra";
+import { PeriodeData,PeriodeTriwulan } from "@/types/extra";
 import { useEffect, useState } from "react";
 import { useOrigin } from "@/hooks/origins";
 
 export default function Periode({onValueChange , defaultValue } : { onValueChange : any, defaultValue? : string}) {
-  const [periodeData, setPeriodeData] = useState<PeriodeData[]>([])
-  const origin = useOrigin();
-  console.log(origin);
+  const [periodeData, setPeriodeData] = useState<PeriodeTriwulan[]>([])
+  // const origin = useOrigin();
+  // console.log(origin);
   useEffect(() => {
 
     const fetchPeriode = async () => {
@@ -30,20 +30,20 @@ export default function Periode({onValueChange , defaultValue } : { onValueChang
     fetchPeriode();
   }, [])
   return (
-      <Select onValueChange={onValueChange} defaultValue={defaultValue}>
+      <Select onValueChange={onValueChange} defaultValue={defaultValue} >
           <FormControl>
             <SelectTrigger>
               <SelectValue placeholder="Select a Periode" />
             </SelectTrigger>
           </FormControl>
           <SelectContent >
-            <ScrollArea className="h-72 w-full rounded-md border">
+            <ScrollArea className="h-52 w-full rounded-md border">
               {periodeData.map((periode) => (
-                <SelectItem value={periode.periode}>{periode.nama || ""}</SelectItem>
+                <SelectItem value={periode.valuetriwulan} key={periode.valuetriwulan}>{periode.nama}</SelectItem>
               ))}
             </ScrollArea>
           </SelectContent>
   
-        </Select>
+      </Select>
   )
 }

@@ -13,14 +13,14 @@ export default function RootLayout({
 
   return (
 
-    <main className="container min-w-[350px] flex h-screen bg-background">
+    <main className="container  flex h-screen bg-background">
      
-        <div className="hidden md:flex flex-col w-1/5 h-full border-2 min-w-[75px]  max-w-[75px] lg:min-w-[200px] lg:max-w-[250px] shadow-sm shadow-card-foreground">
+        <div className="hidden md:flex flex-col md:w-1/6 h-full border-2 min-w-[75px]  max-w-[75px] lg:min-w-[200px] lg:max-w-[250px] shadow-sm shadow-card-foreground">
           <Sidebar/>
         </div>
     
 
-        <div className="flex flex-col w-5/6 border ml-1 h-full shadow-sm shadow-card-foreground">
+        <div className="flex flex-col w-full lg:w-5/6 border ml-1 h-full shadow-sm shadow-card-foreground">
           <div className='flex-1 w-full '>
             <Header/>
           </div>
