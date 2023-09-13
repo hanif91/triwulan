@@ -10,6 +10,15 @@ interface AktivaRep {
   persentase : number | string   
 }
 
+interface SumSub {
+  sumsub1 : number[],
+  sumsub3 : number[],
+  sumsub4 : number[]
+}
+
+
+
+
 export async function GET (  req : NextRequest  ) {
   
 
@@ -17,7 +26,7 @@ export async function GET (  req : NextRequest  ) {
 
 
 
-  let aktivaRep : AktivaRep[] = [];
+
   const exeNrc : number   = await prismadb.$executeRaw`CALL ex_nrc_detail("2023-01-01","2023-03-31","2023-03-31","admin");` 
 
   const aktiva : any[] = await prismadb.$queryRaw(
@@ -26,7 +35,7 @@ export async function GET (  req : NextRequest  ) {
   const pasiva : any[] = await prismadb.$queryRaw(
     Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="PASIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
   )
-  
+  let aktivaRep : AktivaRep[] = [];
   let subReport = {
     sub1 : "", 
     sub3 : "",
@@ -39,9 +48,15 @@ export async function GET (  req : NextRequest  ) {
     sumSub4 : 0,
   } 
 
+  let sumSub : SumSub = {   
+    sumsub1 : [],
+    sumsub3 : [],
+    sumsub4 : []
+  } 
 
 
-  aktiva.map((akt) => {
+  const countAktiva = aktiva.length
+  aktiva.map((akt,index) => {
     let thisSub1 = akt.sub1;
     let thisSub3 = akt.sub3;
     let thisSub4 = akt.sub4;
@@ -53,8 +68,8 @@ export async function GET (  req : NextRequest  ) {
       if (subReport.sub4 !== "") {
         // insert data footer to array
         const footerSub4 : AktivaRep = { 
-          uraian : `footer ${subReport.namasub4}`,
-          bulanini : "",
+          uraian : `Jumlah ${subReport.namasub4}`,
+          bulanini : sumSub.sumsub4.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
           bulanlalu : "",
           lebihkurang : "",    
           persentase : ""            
@@ -68,8 +83,8 @@ export async function GET (  req : NextRequest  ) {
       if (subReport.sub3 !== "") {
         // insert data footer to array
         const footerSub3 : AktivaRep = { 
-          uraian : `footer ${subReport.namasub3}`,
-          bulanini : "",
+          uraian : `Jumlah ${subReport.namasub3}`,
+          bulanini : sumSub.sumsub3.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
           bulanlalu : "",
           lebihkurang : "",    
           persentase : ""            
@@ -82,8 +97,8 @@ export async function GET (  req : NextRequest  ) {
       if (subReport.sub1 !== "") {
         // insert data footer to array
         const footerSub1 : AktivaRep = { 
-          uraian : `footer ${subReport.namasub1}`,
-          bulanini : "",
+          uraian : `Jumlah ${subReport.namasub1}`,
+          bulanini : sumSub.sumsub1.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
           bulanlalu : "",
           lebihkurang : "",    
           persentase : ""            
@@ -103,6 +118,7 @@ export async function GET (  req : NextRequest  ) {
         persentase : ""            
       } 
       aktivaRep.push(headerSub1)
+      sumSub.sumsub1 = [];
     }
     if (thisSub3 !==subReport.sub3) {
       const headerSub3 : AktivaRep = { 
@@ -113,6 +129,7 @@ export async function GET (  req : NextRequest  ) {
         persentase : ""            
       } 
       aktivaRep.push(headerSub3)
+      sumSub.sumsub3 = [];
     } 
     if (thisSub4 !==subReport.sub4) {
       const headerSub4 : AktivaRep = { 
@@ -123,18 +140,58 @@ export async function GET (  req : NextRequest  ) {
         persentase : ""            
       } 
       aktivaRep.push(headerSub4)
+      sumSub.sumsub4 = [];
     } 
 
+    // console.log(akt.bulanini);
     const dataUraian : AktivaRep = { 
       uraian : `${akt.nama}`,
-      bulanini : "",
-      bulanlalu : "",
+      bulanini : akt.blnini,
+      bulanlalu : akt.blnlalu,
       lebihkurang : "",    
-      persentase : ""            
+      persentase : akt.persentase            
     } 
 
     aktivaRep.push(dataUraian)
+    
+    // sumvalue
+    sumSub.sumsub1.push(akt.blnini)
+    sumSub.sumsub3.push(akt.blnini)
+    sumSub.sumsub4.push(akt.blnini)
 
+    //footer last value
+    if ((index+1) === countAktiva) {
+
+
+        const footerSub4 : AktivaRep = { 
+          uraian : `Jumlah ${akt.namasub4}`,
+          bulanini : sumSub.sumsub4.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
+          bulanlalu : "",
+          lebihkurang : "",    
+          persentase : ""            
+        } 
+        aktivaRep.push(footerSub4)
+
+        const footerSub3 : AktivaRep = { 
+          uraian : `footer ${akt.namasub3}`,
+          bulanini : sumSub.sumsub3.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
+          bulanlalu : "",
+          lebihkurang : "",    
+          persentase : ""            
+        } 
+        aktivaRep.push(footerSub3)
+
+        const footerSub1 : AktivaRep = { 
+          uraian : `footer ${subReport.namasub1}`,
+          bulanini : sumSub.sumsub1.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
+          bulanlalu : "",
+          lebihkurang : "",    
+          persentase : ""            
+        } 
+        
+        aktivaRep.push(footerSub1)
+
+    }
 
 
     subReport.namasub4 = akt.namasub4;
