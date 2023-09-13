@@ -45,59 +45,9 @@ export async function GET (  req : NextRequest  ) {
     let thisSub1 = akt.sub1;
     let thisSub3 = akt.sub3;
     let thisSub4 = akt.sub4;
-    if (thisSub1 !==subReport.sub1) {
-      //footer
-      if (subReport.sub1 !== "") {
-        // insert data footer to array
-        const footerSub1 : AktivaRep = { 
-          uraian : `footer ${subReport.namasub1}`,
-          bulanini : "",
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
-        } 
-        
-        aktivaRep.push(footerSub1)
-      } 
 
-      //Header
+    //footer
 
-      const headerSub1 : AktivaRep = { 
-        uraian : `header ${akt.namasub1}`,
-        bulanini : "",
-        bulanlalu : "",
-        lebihkurang : "",    
-        persentase : ""            
-      } 
-      aktivaRep.push(headerSub1)
-
-      console.log('test sub1');
-    }
-    if (thisSub3 !==subReport.sub3) {
-      //footer
-      if (subReport.sub3 !== "") {
-        // insert data footer to array
-        const footerSub3 : AktivaRep = { 
-          uraian : `footer ${subReport.namasub3}`,
-          bulanini : "",
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
-        } 
-        aktivaRep.push(footerSub3)
-      } 
-
-      //Header
-      const headerSub3 : AktivaRep = { 
-        uraian : `header ${akt.namasub3}`,
-        bulanini : "",
-        bulanlalu : "",
-        lebihkurang : "",    
-        persentase : ""            
-      } 
-      aktivaRep.push(headerSub3)
-      console.log('test sub3');
-    } 
     if (thisSub4 !==subReport.sub4) {
       //footer
       if (subReport.sub4 !== "") {
@@ -111,8 +61,60 @@ export async function GET (  req : NextRequest  ) {
         } 
         aktivaRep.push(footerSub4)
       } 
+    } 
 
-      //Header
+    if (thisSub3 !==subReport.sub3) {
+      //footer
+      if (subReport.sub3 !== "") {
+        // insert data footer to array
+        const footerSub3 : AktivaRep = { 
+          uraian : `footer ${subReport.namasub3}`,
+          bulanini : "",
+          bulanlalu : "",
+          lebihkurang : "",    
+          persentase : ""            
+        } 
+        aktivaRep.push(footerSub3)
+      } 
+    } 
+    if (thisSub1 !==subReport.sub1) {
+      //footer
+      if (subReport.sub1 !== "") {
+        // insert data footer to array
+        const footerSub1 : AktivaRep = { 
+          uraian : `footer ${subReport.namasub1}`,
+          bulanini : "",
+          bulanlalu : "",
+          lebihkurang : "",    
+          persentase : ""            
+        } 
+        
+        aktivaRep.push(footerSub1)
+      }
+    }
+
+    //header
+    if (thisSub1 !==subReport.sub1) {
+      const headerSub1 : AktivaRep = { 
+        uraian : `header ${akt.namasub1}`,
+        bulanini : "",
+        bulanlalu : "",
+        lebihkurang : "",    
+        persentase : ""            
+      } 
+      aktivaRep.push(headerSub1)
+    }
+    if (thisSub3 !==subReport.sub3) {
+      const headerSub3 : AktivaRep = { 
+        uraian : `header ${akt.namasub3}`,
+        bulanini : "",
+        bulanlalu : "",
+        lebihkurang : "",    
+        persentase : ""            
+      } 
+      aktivaRep.push(headerSub3)
+    } 
+    if (thisSub4 !==subReport.sub4) {
       const headerSub4 : AktivaRep = { 
         uraian : `header ${akt.namasub4}`,
         bulanini : "",
@@ -121,8 +123,6 @@ export async function GET (  req : NextRequest  ) {
         persentase : ""            
       } 
       aktivaRep.push(headerSub4)
-      console.log('test sub4');
-
     } 
 
     const dataUraian : AktivaRep = { 
@@ -134,6 +134,9 @@ export async function GET (  req : NextRequest  ) {
     } 
 
     aktivaRep.push(dataUraian)
+
+
+
     subReport.namasub4 = akt.namasub4;
 
     subReport.sub4 = thisSub4;
