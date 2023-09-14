@@ -2,6 +2,8 @@ import { NextRequest,NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import prismadb from "@/lib/prismadb";
 
+
+
 interface AktivaRep {
   uraian : string,
   bulanini : number | string,
@@ -16,25 +18,16 @@ interface SumSub {
   sumsub4 : number[]
 }
 
+interface SelectParameterValue {
+  awaltahun : string,
+  bulanini : string,
+  bulanlalu : string
+}
 
 
-
-export async function GET (  req : NextRequest  ) {
-  
-
-  const username = 'admin';
+function getDataBulanIni ( aktiva : any[] ) : AktivaRep[] {
 
 
-
-
-  const exeNrc : number   = await prismadb.$executeRaw`CALL ex_nrc_detail("2023-01-01","2023-03-31","2023-03-31","admin");` 
-
-  const aktiva : any[] = await prismadb.$queryRaw(
-    Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="AKTIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
-  )
-  const pasiva : any[] = await prismadb.$queryRaw(
-    Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="PASIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
-  )
   let aktivaRep : AktivaRep[] = [];
   let subReport = {
     sub1 : "", 
@@ -151,7 +144,6 @@ export async function GET (  req : NextRequest  ) {
       lebihkurang : "",    
       persentase : akt.persentase            
     } 
-
     aktivaRep.push(dataUraian)
     
     // sumvalue
@@ -173,7 +165,7 @@ export async function GET (  req : NextRequest  ) {
         aktivaRep.push(footerSub4)
 
         const footerSub3 : AktivaRep = { 
-          uraian : `footer ${akt.namasub3}`,
+          uraian : `Jumlah ${akt.namasub3}`,
           bulanini : sumSub.sumsub3.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
           bulanlalu : "",
           lebihkurang : "",    
@@ -182,7 +174,7 @@ export async function GET (  req : NextRequest  ) {
         aktivaRep.push(footerSub3)
 
         const footerSub1 : AktivaRep = { 
-          uraian : `footer ${subReport.namasub1}`,
+          uraian : `Jumlah ${subReport.namasub1}`,
           bulanini : sumSub.sumsub1.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
           bulanlalu : "",
           lebihkurang : "",    
@@ -204,15 +196,105 @@ export async function GET (  req : NextRequest  ) {
 
     subReport.sub1 = thisSub1;
     subReport.namasub1 = akt.namasub1;
+
+
   });
 
+  return aktivaRep;
+}
+
+
+
+export async function GET (  req : NextRequest  ) {
+  
+  try {
+    const username = 'admin';
+    const periode = req.nextUrl.searchParams.get("periode");
+    const tanggalreport = req.nextUrl.searchParams.get("tanggalreport");
+    const spilitPeriode = periode?.split(" ");
+    const keyPeriode = `${spilitPeriode?.[0]}${spilitPeriode?.[1]}`
+    // const triwulan : string = spilitPeriode[2]
+    // console.log(spilitPeriode?.[2]);
+    const parameterValue = {
+      TRIWULANI : {
+        awaltahun : `${spilitPeriode?.[2]}-01-01`,
+        bulanini : `${spilitPeriode?.[2]}-03-31`,
+        bulanlalu : `${spilitPeriode?.[2]}-03-31`
+      },
+      TRIWULANII : {
+        awaltahun : `${spilitPeriode?.[2]}-01-01`,
+        bulanini : `${spilitPeriode?.[2]}-06-30`,
+        bulanlalu : `${spilitPeriode?.[2]}-06-30`
+      },
+      TRIWULANIII : {
+        awaltahun : `${spilitPeriode?.[2]}-01-01`,
+        bulanini : `${spilitPeriode?.[2]}-09-30`,
+        bulanlalu : `${spilitPeriode?.[2]}-09-30`
+      },
+      TRIWULANIV : {
+        awaltahun : `${spilitPeriode?.[2]}-01-01`,
+        bulanini : `${spilitPeriode?.[2]}-12-31`,
+        bulanlalu : `${spilitPeriode?.[2]}-12-31`
+      },
+    }
+    let selectParamValue : SelectParameterValue  = {
+      awaltahun : "",
+      bulanini : "",
+      bulanlalu : ""
+    }
+    for (const [key, value] of Object.entries(parameterValue)) {
+      if (key === keyPeriode) {
+        selectParamValue = value;
+        break;
+      }
+    }
+
+    let selectParamValueBlnlalu : SelectParameterValue | null  = {
+      awaltahun : "",
+      bulanini : "",
+      bulanlalu : ""
+    }
+    let lastvalue : SelectParameterValue  = {
+      awaltahun : "",
+      bulanini : "",
+      bulanlalu : ""
+    }
+    Object.entries(parameterValue).forEach((curValue,index) => {
+      if (curValue[0] === keyPeriode) {
+        if (index === 0) {
+          selectParamValueBlnlalu = null
+        } else {
+          selectParamValueBlnlalu = lastvalue;
+        }
+      }
+      lastvalue = curValue[1];
+
+    })
+    console.log(selectParamValue);
+    console.log(selectParamValueBlnlalu);
+      
+
+    const exeNrc : number   = await prismadb.$executeRaw`CALL ex_nrc_detail(${selectParamValue.awaltahun},${selectParamValue.bulanini},${selectParamValue.bulanlalu},${username});` 
+    const aktivaBlnIni : any[] = await prismadb.$queryRaw(
+      Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="AKTIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
+    )
+    const pasivaBlnIni : any[] = await prismadb.$queryRaw(
+      Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="PASIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
+    )
 
   
+    
   
-  // console.log(pasiva);
-  const periode = req.nextUrl.searchParams.get("periode");
-  const tanggalreport = req.nextUrl.searchParams.get("tanggalreport");
-
-  console.log(periode,tanggalreport);
-  return NextResponse.json(aktivaRep)
+    
+    let dataBulanIni : AktivaRep[] = getDataBulanIni(aktivaBlnIni) 
+    // bulan ini,
+ 
+    // console.log(pasiva);
+  
+    console.log(periode,tanggalreport);
+    return NextResponse.json(dataBulanIni,{status : 200})    
+  } catch (error) {
+    return NextResponse.json(error,{status : 400})    
+  }
+  
 }
