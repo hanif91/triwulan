@@ -1,8 +1,10 @@
 import NeracaSchema from "@/lib/schema";
 import axios from "axios";
 import * as z from 'zod';
+
+const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : '';
 const instance  = () => axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: `${origin}/api`,
   headers: {
     'Content-Type': 'application/json'
   }
