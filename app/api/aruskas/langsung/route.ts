@@ -7,7 +7,7 @@ import { FinalResponse,Ak1,AkSa,RepAk} from "@/types/repak";
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { getServerSession } from "next-auth/next";
 
-
+export const dynamic = 'force-dynamic'
 interface SumSub {
   sumsub1 : number[],
   sumsub2 : number[],

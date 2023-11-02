@@ -26,7 +26,7 @@ import FooterLap from '@/components/footer-lap';
 import { match } from 'assert';
 
 
-export default function page() {
+export default function Page() {
 
   const router = useRouter();
   const searchParams = useSearchParams()

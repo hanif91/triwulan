@@ -6,6 +6,7 @@ import { GenTTD,GenLr1,GenLr2,GenLr3 } from "@/lib/utils-db";
 import { LrfirstStep, LrlastStep, RepLr,FinalResponse } from "@/types/replabarugi";
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { getServerSession } from "next-auth/next";
+export const dynamic = 'force-dynamic'
 
 interface SumSub {
   sumsub1 : number[],

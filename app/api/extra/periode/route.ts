@@ -5,6 +5,7 @@ import { PeriodeData,PeriodeTriwulan } from "@/types/extra";
 import { Prisma } from "@prisma/client";
 
 
+
 export async function GET (  req : Request  ) {
 
   try {

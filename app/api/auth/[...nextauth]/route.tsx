@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { redirect } from "next/navigation";
 import prismadb from "@/lib/prismadb";
 
-
+export const dynamic = 'force-dynamic' 
 interface MyUser  {
   id? : number,
   name? : string | null,

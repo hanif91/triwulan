@@ -29,7 +29,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 
 
-export default function page() {
+export default function Page() {
   const router = useRouter();
   const { toast } = useToast()
   const form = useForm<z.infer<typeof AruskasSchema>>({

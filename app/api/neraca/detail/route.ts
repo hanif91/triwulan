@@ -6,7 +6,7 @@ import { GenTTD } from "@/lib/utils-db";
 import { FinalResponse, GenRep } from "@/types/repneraca";
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { getServerSession } from "next-auth/next";
-
+export const dynamic = 'force-dynamic'
 
 interface SumSub {
   sumsub1 : number[],

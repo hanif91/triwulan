@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import FooterLap from '@/components/footer-lap';
 
 
-export default function page() {
+export default function Page() {
 
   const router = useRouter();
   const searchParams = useSearchParams()

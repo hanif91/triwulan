@@ -80,13 +80,13 @@ export default function ItemSubmenu(props : PropsItemSubMenu) {
           </div>
 
           {props.menu?.submenu?.map((smenu) => (
-            <SheetClose asChild>
+            <SheetClose asChild  key={smenu.id}>
               <Link
                 className=""
       
                 href={smenu.path || '/'}
               >
-                <Button variant="outline" type='submit' className='justify-start items-start text-start place-content-start border-0 flex flex-row pl-2 text-sm w-full '          key={smenu.id}>
+                <Button variant="outline" type='submit' className='justify-start items-start text-start place-content-start border-0 flex flex-row pl-2 text-sm w-full '         >
                 <div className="flex my-auto w-6 h-6">
                   {iconSubMenus[smenu.iconsid]}
                 </div>
