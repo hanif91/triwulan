@@ -1,4 +1,4 @@
-import NeracaSchema from "@/lib/form-neraca";
+import NeracaSchema from "@/lib/schema";
 import axios from "axios";
 import * as z from 'zod';
 const instance  = () => axios.create({
@@ -14,11 +14,30 @@ const onGetNeraca = async (url : string, params : any) => {
 // const onGetNeraca = async (url) => {
   try {
     const response = await onGet(url, params)
-
     return response.data
   } catch (error) {
     console.error(error)
   }
 }
 
-export { onGetNeraca }
+const onGetLR = async (url : string, params : any) => {
+  // const onGetNeraca = async (url) => {
+    try {
+      const response = await onGet(url, params)
+      return response.data
+    } catch (error) {
+      console.error(error)
+    }
+}
+
+const onGetAk = async (url : string, params : any) => {
+  // const onGetNeraca = async (url) => {
+    try {
+      const response = await onGet(url, params)
+      return response.data
+    } catch (error) {
+      console.error(error)
+    }
+}
+
+export { onGetNeraca,onGetLR,onGetAk }

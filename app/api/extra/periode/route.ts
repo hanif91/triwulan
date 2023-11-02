@@ -102,7 +102,6 @@ export async function GET (  req : Request  ) {
         const triwulan1 : PeriodeTriwulan = { nama : `TRIWULAN I ${tahun.tahun}`,valuetriwulan : `TRIWULAN I ${tahun.tahun}`}
         periodeTriwulan.push(triwulan1)
       }
-
     })
     return NextResponse.json(periodeTriwulan);
 

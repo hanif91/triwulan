@@ -20,17 +20,18 @@ export default function RootLayout({
         </div>
     
 
-        <div className="flex flex-col w-full lg:w-5/6 border ml-1 h-full shadow-sm shadow-card-foreground">
-          <div className='flex-1 w-full '>
-            <Header/>
-          </div>
+        <div className="flex flex-col w-full lg:w-5/6 border ml-1 h-full shadow-sm shadow-card-foreground ">
 
-          {children}
+            <Header/>
+          {/* </div> */}
+          <div className='flex-1 w-full overflow-auto'>
+            {children}
+          </div>
 
           
-          <div className='flex-1 w-full'>
+          {/* <div className='flex-1 w-full'> */}
             <Footer/>
-          </div>
+          {/* </div> */}
         </div>
     </main>
 

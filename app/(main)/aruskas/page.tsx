@@ -11,13 +11,11 @@ import {
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import LrSchema from '@/lib/lr-schema';
+import  AruskasSchema  from '@/lib/aruskas-schema';
 import { cn } from '@/lib/utils';
 import { format } from "date-fns"
 import { Button } from '@/components/ui/button';
 import Periode from '@/components/periode';
-import DatePicker from '@/components/datepicker';
-import { useRouter } from 'next/navigation';
 import {
   Select,
   SelectContent,
@@ -25,21 +23,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import DatePicker from '@/components/datepicker';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/use-toast';
+
 
 
 export default function page() {
   const router = useRouter();
-
-
-  const form = useForm<z.infer<typeof LrSchema>>({
-    resolver: zodResolver(LrSchema),
+  const { toast } = useToast()
+  const form = useForm<z.infer<typeof AruskasSchema>>({
+    resolver: zodResolver(AruskasSchema),
   });
-  async function onSubmit(values: z.infer<typeof LrSchema>) {
-    const {periode,anggaran,tanggalreport } = values;
+  async function onSubmit(values: z.infer<typeof AruskasSchema>) {
+    const {periode,opsireport,tanggalreport } = values;
     const myDate  = format(tanggalreport, "dd-MMMM-yyyy")
     console.log(myDate)
-    router.push(`/labarugi/saketap?periode=${periode}&tanggalreport=${myDate}&anggaran=${anggaran}`);
+    if (opsireport === "0") {
+      router.push(`/aruskas/langsung?periode=${periode}&tanggalreport=${myDate}`);
+    } else {
+      router.push(`/aruskas/tidaklangsung?periode=${periode}&tanggalreport=${myDate}`);
+    }
   }
+
+
   return (
     <>
       <div className="w-full h-full px-2 py-4 ">
@@ -55,27 +62,28 @@ export default function page() {
                     <Periode
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      key="lrpop11"
+                      key="pop11"
                     />
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
-                name="anggaran"
+                name="opsireport"
                 render={({ field }) => (
                   <FormItem className="space-y-2 flex flex-col ">
-                    <FormLabel>Opsi Anggaran</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} key="opsianggaran2">
+                    <FormLabel>Opsi Laporan</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} key="opsireport2">
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a Opsi Anggaran" />
+                          <SelectValue placeholder="Select a Opsi Laporan" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent key="opsianggaran3">
-                            <SelectItem value="0" key="op0">S/d bulan ini</SelectItem>
-                            <SelectItem value="1" key="op1">S/d tahun ini</SelectItem>
+                      <SelectContent key="opsireport3">
+                            <SelectItem value="0" key="op0">METODE LANGSUNG</SelectItem>
+                            <SelectItem value="1" key="op1">TIDAK LANGSUNG</SelectItem>
                       </SelectContent>
               
                     </Select>
@@ -83,6 +91,7 @@ export default function page() {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="tanggalreport"

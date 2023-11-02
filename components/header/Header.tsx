@@ -66,7 +66,7 @@ export default function Header() {
   const title = useActivePage().title
   return (
     
-    <div className='sticky top-0 h-12 border-b-2'>
+    <div className='sticky top-0 h-12 border-b-2 '>
       <div className='flex justify-between  h-full'>
         <div className="flex-1 w-5/6 h-auto  my-auto ">
           <div className='flex flex-row m-1'>

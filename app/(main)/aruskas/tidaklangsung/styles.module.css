@@ -1,0 +1,18 @@
+.basereport {
+  padding: 5px 20px 5px 20px;
+  width: 210mm;
+}
+
+.table, .figure {
+  page-break-inside: avoid;
+  
+}
+
+@page {
+  size: A4 portrait;
+  margin: 5px;
+}
+
+@page :first {
+  margin: 5px 20px;
+  }

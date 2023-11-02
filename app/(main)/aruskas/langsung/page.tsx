@@ -2,11 +2,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation';
 import { usePathname, useSearchParams } from 'next/navigation'
-import { onGetNeraca } from '@/services/api';
+import { onGetAk } from '@/services/api';
 import useSWR from 'swr'
-import { FinalResponse, RepNeraca } from '@/types/repneraca';
-import NeracaTable from './data-table';
-import { columns } from './columns';
+import { FinalResponse } from '@/types/repak';
 // const fetcher = onGetNeraca('/neraca',);
 import {
   Table,
@@ -25,6 +23,7 @@ import Image from 'next/image';
 import { logos } from '@/data/DataImages';
 import { Button } from '@/components/ui/button';
 import FooterLap from '@/components/footer-lap';
+import { match } from 'assert';
 
 
 export default function page() {
@@ -33,8 +32,9 @@ export default function page() {
   const searchParams = useSearchParams()
   const componentRef = useRef<HTMLDivElement>(null)
   const tanggalreport : string = searchParams.get('tanggalreport') || ""
-  const { data: neraca, error, isLoading } = useSWR(['/neraca/detail', {periode : searchParams.get('periode'), tanggalreport : tanggalreport}], ([url,params]) =>onGetNeraca(url,params))
-  const neracaObj = neraca as FinalResponse 
+  const { data: aruskas, error, isLoading } = useSWR(['/aruskas/langsung', {periode : searchParams.get('periode'), tanggalreport : tanggalreport }], ([url,params]) =>onGetAk(url,params))
+  const akObj = aruskas as FinalResponse 
+  
   if(isLoading){
     return <div>Loading .... </div>
   }
@@ -44,14 +44,15 @@ export default function page() {
   }
 
 
+
   return (
     <>
-    <div className='w-[210mm] mx-auto border-2 shadow-lg'>
+    <div className='w-[297mm] mx-auto border-2 shadow-lg'>
       <div>
       <ReactToPrint 
         trigger={()=>{ return (
         
-          <div className='my-2 w-[210mm] flex justify-end'>
+          <div className='my-2 w-[297mm] flex justify-end'>
             <Button className='mx-[20px] '>Print Laporan</Button>
           </div>
           ) 
@@ -67,22 +68,33 @@ export default function page() {
               width={75}
               height={logos[0].height}
             /> */}
-        <HeaderLap periode={searchParams.get('periode') || ""} judul='LAPORAN NERACA DETAIL'/>
+        <HeaderLap periode={searchParams.get('periode') || ""} judul='LAPORAN ARUSKAS METODE LANGSUNG'/>
 
         <Table className='table'>
           <TableHeader>
+            <TableRow  className="">
+              <TableHead className="w-[300px] border py-0 pl-1 h-6 font-bold " rowSpan={2}>Uraian</TableHead>
+              <TableHead className='border p-0 h-6 font-bold text-center' colSpan={2}>REALISASI</TableHead>
+              <TableHead className="border p-0 h-6 font-bold text-center" colSpan={2}>ANGGARAN</TableHead>
+              <TableHead className='border p-0 h-6 font-bold text-center' colSpan={2}>SELISIH</TableHead>
+            </TableRow>
             <TableRow>
-              <TableHead className="w-[350px] border font-bold">Uraian</TableHead>
-              <TableHead className='border font-bold'>Triwulan ini</TableHead>
-              <TableHead className='border font-bold'>Triwulan Lalu</TableHead>
-              <TableHead className="border font-bold">Selisih</TableHead>
-              <TableHead className="border font-bold">%</TableHead>
+
+              <TableHead className='border p-0 h-6 font-bold text-xs text-center' >TRIWULAN INI</TableHead>
+              <TableHead className='border p-0 h-6 font-bold text-xs text-center'>S/D TRIWULAN INI</TableHead>
+              
+
+              <TableHead className='border p-0 h-6 font-bold text-xs text-center' >TRIWULAN INI</TableHead>
+              <TableHead className='border p-0 h-6 font-bold text-xs text-center'>S/D TRIWULAN INI</TableHead>
+
+              <TableHead className='border p-0 h-6 font-bold text-xs text-center' >TRIWULAN INI</TableHead>
+              <TableHead className='border p-0 h-6 font-bold text-xs text-center'>S/D TRIWULAN INI</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
 
 
-            {neracaObj.dataneraca.map(neraca => {
+            {akObj.dataak.map(ak => {
                 // let clsName : string = ""; 
                 // if(neraca.uraian === "Jumlah Kas / Bank") {
                 //   clsName = "font-bold"
@@ -90,12 +102,14 @@ export default function page() {
                 //   clsName = "font-normal"
                 // }
                 return (
-                  <TableRow key={neraca.uraian}>
-                    <TableCell className={`${neraca.clsname} text-left text-xs border`}>{neraca.uraian}</TableCell>
-                    <TableCell className={cn(neraca.clsname,'p-[2px] text-right border text-xs')}>{neraca.bulanini}</TableCell>
-                    <TableCell className={cn(neraca.clsname,'p-[2px] text-right border text-xs')}>{neraca.bulanlalu}</TableCell>
-                    <TableCell className={cn(neraca.clsname,'p-[2px] text-right border text-xs')}>{neraca.lebihkurang}</TableCell>
-                    <TableCell className={cn(neraca.clsname,'p-[2px] text-right border text-xs')}>{neraca.persentase}</TableCell>
+                  <TableRow key={Math.random()} className='p-0 border-0 leading-[16px]'>
+                    <TableCell className={`${ak.clsname} text-left text-[11px] `}>{ak.uraian}</TableCell>
+                    <TableCell className={cn(ak.clsname,'py-0 px-1 text-right  text-[11px] ')}>{ak.jumlah}</TableCell>
+                    <TableCell className={cn(ak.clsname,'py-0 px-1 text-right  text-[11px] ')}>{ak.jumlahsd}</TableCell>
+                    <TableCell className={cn(ak.clsname,'py-0 px-1 text-right  text-[11px] ')}>{ak.anggaranini}</TableCell>
+                    <TableCell className={cn(ak.clsname,'py-0 px-1 text-right  text-[11px] ')}>{ak.anggaransdini}</TableCell>
+                    <TableCell className={cn(ak.clsname,'py-0 px-1 text-right  text-[11px] ')}>{ak.lebihkurang}</TableCell>
+                    <TableCell className={cn(ak.clsname,'py-0 px-1 text-right border-r text-[11px] ')}>{ak.lebihkurangsd}</TableCell>
                   </TableRow>
                 )
               })
@@ -103,7 +117,7 @@ export default function page() {
               }
           </TableBody>
         </Table>
-        <FooterLap datattd={neracaObj.datattd} tanggalreport={tanggalreport} kota='Probolinggo'/>
+        <FooterLap datattd={akObj.datattd} tanggalreport={tanggalreport} kota='Probolinggo'/>
 
         {/* <table>
           <tr>

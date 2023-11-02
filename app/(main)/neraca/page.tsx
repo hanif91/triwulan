@@ -11,7 +11,7 @@ import {
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import NeracaSchema from '@/lib/form-neraca';
+import NeracaSchema from '@/lib/schema';
 import { cn } from '@/lib/utils';
 import { format } from "date-fns"
 import { Button } from '@/components/ui/button';
@@ -25,13 +25,13 @@ import {
 } from "@/components/ui/select";
 import DatePicker from '@/components/datepicker';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/use-toast';
 
 
 
 export default function page() {
   const router = useRouter();
-
-
+  const { toast } = useToast()
   const form = useForm<z.infer<typeof NeracaSchema>>({
     resolver: zodResolver(NeracaSchema),
   });
@@ -42,7 +42,12 @@ export default function page() {
     if (opsireport === "0") {
       router.push(`/neraca/detail?periode=${periode}&tanggalreport=${myDate}`);
     } else {
-      router.push(`/neraca/rekapitulasi?periode=${periode}&tanggalreport=${myDate}`);
+      // router.push(`/neraca/rekapitulasi?periode=${periode}&tanggalreport=${myDate}`);
+      toast({
+        title: "Neraca",
+        description: "Neraca Rekap Masih Belum Tersedia",
+      })
+
     }
 
   }
@@ -114,7 +119,7 @@ export default function page() {
             <div className='w-full flex justify-end  mt-3 pt-2'>
   
               <Button type="submit" variant={'default'} className="w-32 items-end ">
-                Print Laporan
+                Tampilkan
               </Button>
             </div>
 

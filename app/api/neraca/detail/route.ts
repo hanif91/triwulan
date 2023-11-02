@@ -1,21 +1,20 @@
 import { NextRequest,NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import prismadb from "@/lib/prismadb";
+import { cariPersentase, fltoNum, numtoFl,formatNumber } from "@/lib/utils";
+import { GenTTD } from "@/lib/utils-db";
+import { FinalResponse, GenRep } from "@/types/repneraca";
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { getServerSession } from "next-auth/next";
 
-
-
-interface GenRep {
-  uraian : string,
-  bulanini : number | string,
-  bulanlalu : number | string,
-  lebihkurang : number | string,    
-  persentase : number | string   
-}
 
 interface SumSub {
   sumsub1 : number[],
   sumsub3 : number[],
-  sumsub4 : number[]
+  sumsub4 : number[],
+  sumsub1lalu : number[],
+  sumsub3lalu : number[],
+  sumsub4lalu : number[]  
 }
 
 interface SelectParameterValue {
@@ -24,6 +23,85 @@ interface SelectParameterValue {
   bulanlalu : string
 }
 
+
+function genDataFinal (valBlnini : any[] , valBlnlalu : any[] ) : any[] {
+          // const objtam = {
+        //   idx	     : 99723123,
+        //   namasub1	: "AKTIVA",
+        //   namasub2	: "Aktiva Tak Berwujud",
+        //   namasub3	: "Aktiva Tak Berwujud",
+        //   namasub4	: "Beban Ditangguhkan",
+        //   sub1	: "1",
+        //   sub2	: "11",
+        //   sub3	: "11",
+        //   sub4	: "11.02",
+        //   kode	: "11.02.02",
+        //   nama	: "11.02.02 Rupa-rupa Rupa2 Rupa Kas Kecil",
+        //   blnini	: 5642,
+        //   blnlalu	: 0,
+        //   jumlah	: 0,
+        //   persentase : 0,	
+        //   nmuser : 'admin'
+        // }
+        // aktivaBlnlalu.splice(6,0,objtam);
+         
+        //aktiva
+
+        //pasiva
+
+
+  let dumpValini = valBlnini.map(v => v.kode);
+  const dumpValLalu = valBlnlalu.map(v => v.kode);
+  //insert kodeakun jika bulan lalu tidak ada di bulan ini
+  dumpValLalu.map((val,index) => {
+    const ind = dumpValini.indexOf(val); 
+    if (ind === -1) {
+      dumpValini.push(val)
+    }
+  })
+  
+  //sort lagi data
+  dumpValini.sort(); 
+  
+  //generate data bulan ini dan join value bulan lalu
+  const valFinal = dumpValini.map((val,index) => {
+    const resu = valBlnini.find( (vale) => {
+      if (vale.kode === val ) {
+        return vale;
+      }
+    } )
+
+    if (resu === undefined) {
+      const resuBlnLalu = valBlnlalu.find( (v) => {
+        if (v.kode === val ) {
+     
+          return v;
+        }
+      })
+      if (resuBlnLalu) {
+        const valBlnini = resuBlnLalu.blnini
+        console.log({...resuBlnLalu,blnini : 0,blnlalu : valBlnini})
+        return resuBlnLalu;
+      }
+    } else {
+      const resuBlnLalu = valBlnlalu.find( (v) => {
+        if (v.kode === val ) {
+     
+          return v;
+        }
+      })
+      const jumlahBlnLalu = resuBlnLalu?.blnini || 0;
+
+      const finalValue = {...resu,blnlalu : jumlahBlnLalu,jumlah : 0,persentase : 0 }
+      // console.log()
+      // return {...resu,blnlalu : resuBlnLalu.blnini,jumlah : resu.blnini - resuBlnLalu.blnini,persentase : (resu.blnini - resuBlnLalu.blnini)/resuBlnLalu.blnini*100 };
+      return finalValue;
+    }
+  })
+
+
+  return valFinal
+}
 
 
 function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
@@ -45,7 +123,10 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
   let sumSub : SumSub = {   
     sumsub1 : [],
     sumsub3 : [],
-    sumsub4 : []
+    sumsub4 : [],
+    sumsub1lalu : [],
+    sumsub3lalu : [],
+    sumsub4lalu : [],
   } 
 
 
@@ -60,13 +141,15 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
     if (thisSub4 !==subReport.sub4) {
       //footer
       if (subReport.sub4 !== "") {
-        // insert data footer to array
+        const jmlSumblnini = sumSub.sumsub4.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+        const jmlSumblnlalu = sumSub.sumsub4lalu.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
         const footerSub4 : GenRep = { 
           uraian : `Jumlah ${subReport.namasub4}`,
-          bulanini : sumSub.sumsub4.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
+          bulanini : jmlSumblnini,
+          bulanlalu : jmlSumblnlalu,
+          lebihkurang : numtoFl(fltoNum(jmlSumblnini)-fltoNum(jmlSumblnlalu)),    
+          persentase :  cariPersentase(jmlSumblnini,jmlSumblnlalu),
+          clsname : 'py-1 pl-5 font-bold'           
         } 
         rep.push(footerSub4)
       } 
@@ -75,13 +158,15 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
     if (thisSub3 !==subReport.sub3) {
       //footer
       if (subReport.sub3 !== "") {
-        // insert data footer to array
+        const jmlSumblnini = sumSub.sumsub3.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+        const jmlSumblnlalu = sumSub.sumsub3lalu.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
         const footerSub3 : GenRep = { 
           uraian : `Jumlah ${subReport.namasub3}`,
-          bulanini : sumSub.sumsub3.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
+          bulanini : jmlSumblnini,
+          bulanlalu : jmlSumblnlalu,
+          lebihkurang : numtoFl(fltoNum(jmlSumblnini)-fltoNum(jmlSumblnlalu)),    
+          persentase :  cariPersentase(jmlSumblnini,jmlSumblnlalu),
+          clsname : 'py-1 pl-3 font-bold'                    
         } 
         rep.push(footerSub3)
       } 
@@ -89,13 +174,15 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
     if (thisSub1 !==subReport.sub1) {
       //footer
       if (subReport.sub1 !== "") {
-        // insert data footer to array
+        const jmlSumblnini = sumSub.sumsub1.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+        const jmlSumblnlalu = sumSub.sumsub1lalu.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
         const footerSub1 : GenRep = { 
           uraian : `Jumlah ${subReport.namasub1}`,
-          bulanini : sumSub.sumsub1.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
+          bulanini : jmlSumblnini,
+          bulanlalu : jmlSumblnlalu,
+          lebihkurang : numtoFl(fltoNum(jmlSumblnini)-fltoNum(jmlSumblnlalu)),    
+          persentase :  cariPersentase(jmlSumblnini,jmlSumblnlalu),
+          clsname : 'py-1 pl-1 font-bold'                 
         } 
         
         rep.push(footerSub1)
@@ -105,33 +192,36 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
     //header
     if (thisSub1 !==subReport.sub1) {
       const headerSub1 : GenRep = { 
-        uraian : `header ${akt.namasub1}`,
+        uraian : `${akt.namasub1}`,
         bulanini : "",
         bulanlalu : "",
         lebihkurang : "",    
-        persentase : ""            
+        persentase : "",
+        clsname : 'py-1 pl-1 font-bold'       
       } 
       rep.push(headerSub1)
       sumSub.sumsub1 = [];
     }
     if (thisSub3 !==subReport.sub3) {
       const headerSub3 : GenRep = { 
-        uraian : `header ${akt.namasub3}`,
+        uraian : `${akt.namasub3}`,
         bulanini : "",
         bulanlalu : "",
         lebihkurang : "",    
-        persentase : ""            
+        persentase : "",
+        clsname : 'py-1 pl-3 font-bold'              
       } 
       rep.push(headerSub3)
       sumSub.sumsub3 = [];
     } 
     if (thisSub4 !==subReport.sub4) {
       const headerSub4 : GenRep = { 
-        uraian : `header ${akt.namasub4}`,
+        uraian : `${akt.namasub4}`,
         bulanini : "",
         bulanlalu : "",
         lebihkurang : "",    
-        persentase : ""            
+        persentase : "",
+        clsname : 'py-1 pl-5 font-bold'               
       } 
       rep.push(headerSub4)
       sumSub.sumsub4 = [];
@@ -140,10 +230,11 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
     // console.log(akt.bulanini);
     const dataUraian : GenRep = { 
       uraian : `${akt.nama}`,
-      bulanini : akt.blnini,
-      bulanlalu : akt.blnlalu,
-      lebihkurang : "",    
-      persentase : akt.persentase            
+      bulanini : akt.blnini as number,
+      bulanlalu : akt.blnlalu as number,
+      lebihkurang : numtoFl(fltoNum(akt.blnini)-fltoNum(akt.blnlalu)),     
+      persentase : ((akt.blnini-akt.blnlalu)/akt.blnlalu*100),
+      clsname : 'py-1 pl-7'              
     } 
     rep.push(dataUraian)
     
@@ -151,35 +242,45 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
     sumSub.sumsub1.push(akt.blnini)
     sumSub.sumsub3.push(akt.blnini)
     sumSub.sumsub4.push(akt.blnini)
+    sumSub.sumsub1lalu.push(akt.blnlalu)
+    sumSub.sumsub3lalu.push(akt.blnlalu)
+    sumSub.sumsub4lalu.push(akt.blnlalu)
 
     //footer last value
     if ((index+1) === countAktiva) {
-
-
+      let jmlSumblnini = sumSub.sumsub4.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+      let jmlSumblnlalu = sumSub.sumsub4lalu.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
         const footerSub4 : GenRep = { 
           uraian : `Jumlah ${akt.namasub4}`,
-          bulanini : sumSub.sumsub4.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
+          bulanini : jmlSumblnini,
+          bulanlalu : jmlSumblnlalu,
+          lebihkurang : numtoFl(fltoNum(jmlSumblnini)-fltoNum(jmlSumblnlalu)),    
+          persentase :  cariPersentase(jmlSumblnini,jmlSumblnlalu),
+          clsname : 'py-1 pl-5 font-bold'                
         } 
         rep.push(footerSub4)
 
+        jmlSumblnini = sumSub.sumsub3.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+        jmlSumblnlalu = sumSub.sumsub3lalu.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
         const footerSub3 : GenRep = { 
           uraian : `Jumlah ${akt.namasub3}`,
-          bulanini : sumSub.sumsub3.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
+          bulanini : jmlSumblnini,
+          bulanlalu : jmlSumblnlalu,
+          lebihkurang : numtoFl(fltoNum(jmlSumblnini)-fltoNum(jmlSumblnlalu)),    
+          persentase :  cariPersentase(jmlSumblnini,jmlSumblnlalu),
+          clsname : 'py-1 pl-3 font-bold'                   
         } 
         rep.push(footerSub3)
 
+        jmlSumblnini = sumSub.sumsub1.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+        jmlSumblnlalu = sumSub.sumsub1lalu.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
         const footerSub1 : GenRep = { 
-          uraian : `Jumlah ${subReport.namasub1}`,
-          bulanini : sumSub.sumsub1.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
+          uraian : `Jumlah ${akt.namasub1}`,
+          bulanini : jmlSumblnini,
+          bulanlalu : jmlSumblnlalu,
+          lebihkurang : numtoFl(fltoNum(jmlSumblnini)-fltoNum(jmlSumblnlalu)),    
+          persentase :  cariPersentase(jmlSumblnini,jmlSumblnlalu),
+          clsname : 'py-1 pl-1 font-bold'             
         } 
         
         rep.push(footerSub1)
@@ -218,7 +319,10 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
   sumSub = {   
     sumsub1 : [],
     sumsub3 : [],
-    sumsub4 : []
+    sumsub4 : [],
+    sumsub1lalu : [],
+    sumsub3lalu : [],
+    sumsub4lalu : [],
   } 
 
   const countPasiva = pasiva.length
@@ -233,12 +337,15 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
       //footer
       if (subReport.sub4 !== "") {
         // insert data footer to array
+        const jmlSumblnini = sumSub.sumsub4.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+        const jmlSumblnlalu = sumSub.sumsub4lalu.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
         const footerSub4 : GenRep = { 
           uraian : `Jumlah ${subReport.namasub4}`,
-          bulanini : sumSub.sumsub4.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
+          bulanini : jmlSumblnini,
+          bulanlalu : jmlSumblnlalu,
+          lebihkurang : numtoFl(fltoNum(jmlSumblnini)-fltoNum(jmlSumblnlalu)),    
+          persentase :  cariPersentase(jmlSumblnini,jmlSumblnlalu),
+          clsname : 'py-1 pl-5 font-bold'             
         } 
         rep.push(footerSub4)
       } 
@@ -248,12 +355,15 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
       //footer
       if (subReport.sub3 !== "") {
         // insert data footer to array
+        const jmlSumblnini = sumSub.sumsub3.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+        const jmlSumblnlalu = sumSub.sumsub3lalu.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
         const footerSub3 : GenRep = { 
           uraian : `Jumlah ${subReport.namasub3}`,
-          bulanini : sumSub.sumsub3.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
+          bulanini : jmlSumblnini,
+          bulanlalu : jmlSumblnlalu,
+          lebihkurang : numtoFl(fltoNum(jmlSumblnini)-fltoNum(jmlSumblnlalu)),    
+          persentase :  cariPersentase(jmlSumblnini,jmlSumblnlalu),
+          clsname : 'py-1 pl-3 font-bold'              
         } 
         rep.push(footerSub3)
       } 
@@ -262,12 +372,15 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
       //footer
       if (subReport.sub1 !== "") {
         // insert data footer to array
+        const jmlSumblnini = sumSub.sumsub1.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+        const jmlSumblnlalu = sumSub.sumsub1lalu.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
         const footerSub1 : GenRep = { 
           uraian : `Jumlah ${subReport.namasub1}`,
-          bulanini : sumSub.sumsub1.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
+          bulanini : jmlSumblnini,
+          bulanlalu : jmlSumblnlalu,
+          lebihkurang : numtoFl(fltoNum(jmlSumblnini)-fltoNum(jmlSumblnlalu)),    
+          persentase :  cariPersentase(jmlSumblnini,jmlSumblnlalu),
+          clsname : 'py-1 pl-1 font-bold'              
         } 
         
         rep.push(footerSub1)
@@ -277,33 +390,36 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
     //header
     if (thisSub1 !==subReport.sub1) {
       const headerSub1 : GenRep = { 
-        uraian : `header ${akt.namasub1}`,
+        uraian : `${akt.namasub1}`,
         bulanini : "",
         bulanlalu : "",
         lebihkurang : "",    
-        persentase : ""            
+        persentase : "",
+        clsname : 'py-1 pl-1 font-bold'            
       } 
       rep.push(headerSub1)
       sumSub.sumsub1 = [];
     }
     if (thisSub3 !==subReport.sub3) {
       const headerSub3 : GenRep = { 
-        uraian : `header ${akt.namasub3}`,
+        uraian : `${akt.namasub3}`,
         bulanini : "",
         bulanlalu : "",
         lebihkurang : "",    
-        persentase : ""            
+        persentase : "",
+        clsname : 'py-1 pl-3 font-bold'            
       } 
       rep.push(headerSub3)
       sumSub.sumsub3 = [];
     } 
     if (thisSub4 !==subReport.sub4) {
       const headerSub4 : GenRep = { 
-        uraian : `header ${akt.namasub4}`,
+        uraian : `${akt.namasub4}`,
         bulanini : "",
         bulanlalu : "",
         lebihkurang : "",    
-        persentase : ""            
+        persentase : "",
+        clsname : 'py-1 pl-5 font-bold'            
       } 
       rep.push(headerSub4)
       sumSub.sumsub4 = [];
@@ -314,8 +430,9 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
       uraian : `${akt.nama}`,
       bulanini : akt.blnini,
       bulanlalu : akt.blnlalu,
-      lebihkurang : "",    
-      persentase : akt.persentase            
+      lebihkurang : numtoFl(fltoNum(akt.blnini)-fltoNum(akt.blnlalu)),    
+      persentase : ((akt.blnini-akt.blnlalu)/akt.blnlalu*100),
+      clsname : 'py-1 pl-7'            
     } 
     rep.push(dataUraian)
     
@@ -323,38 +440,49 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
     sumSub.sumsub1.push(akt.blnini)
     sumSub.sumsub3.push(akt.blnini)
     sumSub.sumsub4.push(akt.blnini)
+    sumSub.sumsub1lalu.push(akt.blnlalu)
+    sumSub.sumsub3lalu.push(akt.blnlalu)
+    sumSub.sumsub4lalu.push(akt.blnlalu)
 
     //footer last value
     if ((index+1) === countPasiva) {
+      let jmlSumblnini = sumSub.sumsub4.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+      let jmlSumblnlalu = sumSub.sumsub4lalu.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
 
+      const footerSub4 : GenRep = { 
+        uraian : `Jumlah ${akt.namasub4}`,
+        bulanini : jmlSumblnini,
+        bulanlalu : jmlSumblnlalu,
+        lebihkurang : numtoFl(fltoNum(jmlSumblnini)-fltoNum(jmlSumblnlalu)),    
+        persentase :  cariPersentase(jmlSumblnini,jmlSumblnlalu),
+        clsname : 'py-1 pl-5 font-bold'             
+      } 
+      rep.push(footerSub4)
 
-        const footerSub4 : GenRep = { 
-          uraian : `Jumlah ${akt.namasub4}`,
-          bulanini : sumSub.sumsub4.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
-        } 
-        rep.push(footerSub4)
+      jmlSumblnini = sumSub.sumsub3.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+      jmlSumblnlalu = sumSub.sumsub3lalu.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+      const footerSub3 : GenRep = { 
+        uraian : `Jumlah ${akt.namasub3}`,
+        bulanini : jmlSumblnini,
+        bulanlalu : jmlSumblnlalu,
+        lebihkurang : numtoFl(fltoNum(jmlSumblnini)-fltoNum(jmlSumblnlalu)),    
+        persentase :  cariPersentase(jmlSumblnini,jmlSumblnlalu),
+        clsname : 'py-1 pl-3 font-bold'           
+      } 
+      rep.push(footerSub3)
 
-        const footerSub3 : GenRep = { 
-          uraian : `Jumlah ${akt.namasub3}`,
-          bulanini : sumSub.sumsub3.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
-        } 
-        rep.push(footerSub3)
-
-        const footerSub1 : GenRep = { 
-          uraian : `Jumlah ${subReport.namasub1}`,
-          bulanini : sumSub.sumsub1.reduce((left,right) => { const jml=(left * 1000) + (right * 1000); return jml/1000}).toFixed(2),
-          bulanlalu : "",
-          lebihkurang : "",    
-          persentase : ""            
-        } 
-        
-        rep.push(footerSub1)
+      jmlSumblnini = sumSub.sumsub1.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+      jmlSumblnlalu = sumSub.sumsub1lalu.reduce((left,right) => { const jml=fltoNum(left) + fltoNum(right); return numtoFl(jml)});
+      const footerSub1 : GenRep = { 
+        uraian : `Jumlah ${subReport.namasub1}`,
+        bulanini : jmlSumblnini,
+        bulanlalu : jmlSumblnlalu,
+        lebihkurang : numtoFl(fltoNum(jmlSumblnini)-fltoNum(jmlSumblnlalu)),    
+        persentase :  cariPersentase(jmlSumblnini,jmlSumblnlalu),
+        clsname : 'py-1 pl-1 font-bold'          
+      } 
+      
+      rep.push(footerSub1)
 
     }
 
@@ -381,11 +509,17 @@ function genRep ( aktiva : any[],pasiva : any[] ) : GenRep[] {
 export async function GET (  req : NextRequest  ) {
   
   try {
-    const username = 'admin';
+    const dataSession =  await getServerSession(authOptions);
+    if (dataSession === null) {
+      return NextResponse.json({ message : 'Unauthorized'},{status : 401}) 
+    }
+    const username = dataSession.user.username;
     const periode = req.nextUrl.searchParams.get("periode");
     const tanggalreport = req.nextUrl.searchParams.get("tanggalreport");
     const spilitPeriode = periode?.split(" ");
     const keyPeriode = `${spilitPeriode?.[0]}${spilitPeriode?.[1]}`
+    const tahunlalu = parseInt(spilitPeriode?.[2] || "0") - 1;
+    console.log(tahunlalu);
     // const triwulan : string = spilitPeriode[2]
     // console.log(spilitPeriode?.[2]);
     const parameterValue = {
@@ -409,6 +543,12 @@ export async function GET (  req : NextRequest  ) {
         bulanini : `${spilitPeriode?.[2]}-12-31`,
         bulanlalu : `${spilitPeriode?.[2]}-12-31`
       },
+    }
+
+    const parameterValueTahunLalu = {
+      awaltahun : `${tahunlalu}-01-01`,
+      bulanini : `${tahunlalu}-12-31`,
+      bulanlalu : `${tahunlalu}-12-31`
     }
     let selectParamValue : SelectParameterValue  = {
       awaltahun : "",
@@ -443,10 +583,6 @@ export async function GET (  req : NextRequest  ) {
       lastvalue = curValue[1];
 
     })
-    // console.log(selectParamValue);
-    // console.log(selectParamValueBlnlalu);
-      
-
     const exeNrcblnini : number   = await prismadb.$executeRaw`CALL ex_nrc_detail(${selectParamValue.awaltahun},${selectParamValue.bulanini},${selectParamValue.bulanlalu},${username});` 
     const aktivaBlnIni : any[] = await prismadb.$queryRaw(
       Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="AKTIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
@@ -455,127 +591,70 @@ export async function GET (  req : NextRequest  ) {
       Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="PASIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
     )
 
-    let dataBulanlalu : GenRep[] | null = null;
-    let aktivaFinal;
+
+    let aktivaFinal =  aktivaBlnIni.map(v => {return {...v,blnlalu : 0 }});
+    let pasivaFinal =  pasivaBlnIni.map(v => {return {...v,blnlalu : 0 }});
+
     if (selectParamValueBlnlalu !== null) {
-      const notFoundKode : string[] = [];
-      const position : number[] = [];
-      const indexnotFoundKode : number[] = [];
       const exeNrcblnlalu : number   = await prismadb.$executeRaw`CALL ex_nrc_detail(${selectParamValueBlnlalu.awaltahun},${selectParamValueBlnlalu.bulanini},${selectParamValueBlnlalu.bulanlalu},${username});` 
-      const aktivaBlnlalu : any[] = await prismadb.$queryRaw(
-        Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="AKTIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
-      )
-      const pasivaBlnlalu : any[] = await prismadb.$queryRaw(
-        Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="PASIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
-      )
-      const objtam = {
-        idx	     : 99723123,
-        namasub1	: "AKTIVA",
-        namasub2	: "Aktiva Tak Berwujud",
-        namasub3	: "Aktiva Tak Berwujud",
-        namasub4	: "Beban Ditangguhkan",
-        sub1	: "1",
-        sub2	: "11",
-        sub3	: "11",
-        sub4	: "11.02",
-        kode	: "11.02.02",
-        nama	: "11.02.02 Rupa-rupa Rupa2 Rupa Kas Kecil",
-        blnini	: 0,
-        blnlalu	: 0,
-        jumlah	: 0,
-        persentase : 0,	
-        nmuser : 'admin'
+      if (exeNrcblnlalu > 0) {
+        const aktivaBlnlalu : any[] = await prismadb.$queryRaw(
+          Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="AKTIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
+        )
+        const pasivaBlnlalu : any[] = await prismadb.$queryRaw(
+          Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="PASIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
+        )
+        aktivaFinal = genDataFinal(aktivaBlnIni,aktivaBlnlalu);
+
+        pasivaFinal = genDataFinal(pasivaBlnIni,pasivaBlnlalu);
       }
+    } else {
+      const exeNrcblnlalu : number   = await prismadb.$executeRaw`CALL ex_nrc_detail(${parameterValueTahunLalu.awaltahun},${parameterValueTahunLalu.bulanini},${parameterValueTahunLalu.bulanlalu},${username});`
+      if (exeNrcblnlalu > 0) {
+        const aktivaBlnlalu : any[] = await prismadb.$queryRaw(
+          Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="AKTIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
+        )
+        const pasivaBlnlalu : any[] = await prismadb.$queryRaw(
+          Prisma.sql`SELECT * FROM dump_nrc WHERE namasub1="PASIVA" and nmuser=${username} and (blnini+blnlalu)<>0 order by kode` 
+        )    
 
-      let indexPosition :  { position  : number, index : number}[] = [{ position : -1, index : -1}];
+        aktivaFinal = genDataFinal(aktivaBlnIni,aktivaBlnlalu);
 
-
-
-      aktivaBlnlalu.splice(6,0,objtam);
-      // console.log(aktivaBlnIni);
-      // tes = aktivaBlnIni.concat(aktivaBlnlalu);
-
-
-      // console.log(tes);
-      // aktivaBlnlalu.map((val,index) => {
-      //   // let position : number[]  = []
-      //   // let indext : number[]  = []
-      //   // let flag : number = 0
-      //   // let lastindex : number;
+        pasivaFinal = genDataFinal(pasivaBlnIni,pasivaBlnlalu);        
         
-      //   if (aktivaBlnIni[index].kode === val.kode ) {
-      //     console.log('tes');
-      //   } else {         console.log(val.kode,aktivaBlnIni[index].kode);
-      
-      //   }
-
-      // })
-
-      let dumpAktivaini = aktivaBlnIni.map(v => v.kode);
-      console.log(dumpAktivaini);
-      const dumpAktivaLalu = aktivaBlnlalu.map(v => v.kode);
-      // let indexPos : number []=-1
-      dumpAktivaLalu.map((val,index) => {
-        const ind = dumpAktivaini.indexOf(val); 
-        if (ind === -1) {
-          dumpAktivaini.push(val)
-        }
-      })
-
-      console.log(dumpAktivaini);
-      dumpAktivaini.sort();
-      console.log(dumpAktivaini);
-      aktivaFinal = dumpAktivaini.map((val) => {
-        // const ind = dumpAktivaini.indexOf(val); 
-        const resu = aktivaBlnIni.find( (vale) => {
-          if (vale.kode === val ) {
-            return vale;
-          }
-        } )
-
-        if (resu === undefined) {
-          const resuBlnLalu = aktivaBlnlalu.find( (v) => {
-            if (v.kode === val ) {
-         
-              return v;
-            }
-          })
-          if (resuBlnLalu) {
-            console.log(resuBlnLalu)
-            return resuBlnLalu;
-          }
-        } else {
-          return resu;
-        }
-      })
-
-      // console.log(notFoundKode,indexnotFoundKode)
-      // if (notFoundKode.length > 0 ) {
-        
-      //   console.log(aktivaBlnIni);
-
-      //   aktivaBlnIni.splice(indexnotFoundKode[0],0,aktivaBlnlalu[indexnotFoundKode[0]])
-
-      // }
-      // aktivaBlnlalu.map((val) => {
-      //   const indexOf = aktivaBlnIni.map(v => v.kode).indexOf(val.kode);
-      //   console.log(indexOf)
-      //   if (indexOf === -1) {
-      //     notFoundKode.push(val.kode);
-      //   }
-      // })
-
+      }
     }
-
-    
-    let dataBulanIni : GenRep[] = genRep(aktivaBlnIni,pasivaBlnIni) 
-    // bulan ini,
- 
-    // console.log(pasiva);
   
+    
+
+    const dataBulanIni : GenRep[] = genRep(aktivaFinal,pasivaFinal) 
+
+    const dataBulanIniCur =  dataBulanIni.map(val => {
+      let fValue =  val;
+      if (fValue.bulanini as string !== "") {
+        const dumpblnIni = parseFloat((val.bulanini as number).toFixed(2))
+        const dumpblnlalu = parseFloat((val.bulanlalu as number).toFixed(2))
+        const dumpblnselisih = parseFloat((val.lebihkurang as number).toFixed(2))
+        const dumpblnpersentase = parseFloat((val.persentase as number).toFixed(2))
+        fValue = { ...val,bulanini : formatNumber(dumpblnIni),bulanlalu : formatNumber(dumpblnlalu),lebihkurang : formatNumber(dumpblnselisih),persentase : formatNumber(dumpblnpersentase) }
+      }     
+      return  fValue
+    })
+
+
     console.log(periode,tanggalreport);
-    return NextResponse.json(aktivaFinal,{status : 200})    
+    // let ttd : DataTtd[] = [defaultDataTtd]
+
+    const ttd = await GenTTD('nrc1',username).then((res)=>{ return res;});
+
+    const finalResponse : FinalResponse = {
+      dataneraca : dataBulanIniCur,
+      datattd : ttd
+    }
+ 
+    return NextResponse.json(finalResponse,{status : 200})    
   } catch (error) {
+    console.log(error);
     return NextResponse.json(error,{status : 400})    
   }
   
