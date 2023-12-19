@@ -81,7 +81,7 @@ function genDataFinal (valBlnini : any[] , valBlnlalu : any[] ) : any[] {
       if (resuBlnLalu) {
         const valBlnini = resuBlnLalu.blnini
         console.log({...resuBlnLalu,blnini : 0,blnlalu : valBlnini})
-        return resuBlnLalu;
+        return {...resuBlnLalu,blnini : 0,blnlalu : valBlnini};
       }
     } else {
       const resuBlnLalu = valBlnlalu.find( (v) => {
